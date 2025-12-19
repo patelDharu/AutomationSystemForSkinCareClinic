@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block content %}
+
+{% if new_patient %}
+<div class="alert alert-success d-flex align-items-center justify-content-between shadow-sm" role="alert">
+    <div>
+        <i class="bi bi-check-circle-fill me-2"></i> 
+        New Patient <strong>{{ new_patient.name }}</strong> registered successfully!
+    </div>
+    <a href="/send_welcome/{{ new_patient.id }}" class="btn btn-success btn-sm rounded-pill px-3">
+        <i class="bi bi-whatsapp"></i> Send Welcome Msg
+    </a>
+</div>
+{% endif %}
+
+<div class="modern-card">
+    <div class="card-header-custom">
+        <i class="bi bi-table text-primary"></i>
+        <h4 class="m-0">Page 2: Appointment List</h4>
+    </div>
+    
+    <div class="p-4 bg-light border-bottom">
+        <form method="POST" action="/appointments" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="small text-muted fw-bold mb-1">DATE</label>
+                <input type="date" name="search_date" value="{{ s_date }}" class="form-control">
+            </div>
+            
+            <div class="col-md-4">
+                <label class="small text-muted fw-bold mb-1">SEARCH TREATMENT</label>
+                <input type="text" name="search_treatment" value="{{ s_treatment }}" class="form-control" placeholder="Type to search...">
+            </div>
+            
+            <div class="col-md-4">
+                <button type="submit" name="search_btn" class="btn btn-primary-custom me-2">Filter</button>
+                <button type="submit" name="show_all" class="btn btn-outline-secondary">Show All</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th>Next Date</th>
+                    <th>Patient</th>
+                    <th>Diagnosis</th>
+                    <th>Treatment Done</th>
+                    <th>Medicines</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for visit in visits %}
+                <tr>
+                    <td class="fw-bold text-primary">{{ visit.next_appt_date }}</td>
+                    <td>
+                        <div class="fw-bold">{{ visit.patient.name }}</div>
+                        <div class="small text-muted">{{ visit.patient.phone }}</div>
+                    </td>
+                    <td><span class="text-danger fw-bold">{{ visit.diagnosis }}</span></td>
+                    <td><span class="badge bg-info text-dark">{{ visit.procedure }}</span></td>
+                    <td class="small" style="max-width:200px; white-space:pre-wrap;">{{ visit.medicine_box }}</td>
+                    <td>
+                        <a href="/delete/{{ visit.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center py-4 text-muted">No appointments found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
