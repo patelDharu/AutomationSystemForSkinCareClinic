@@ -23,10 +23,7 @@ class Patient(db.Model):
     gender = db.Column(db.String(10))
     address = db.Column(db.Text)
     family_history = db.Column(db.Text)
-    
-    # NEW COLUMN: Tracks if Welcome Msg was sent
     welcome_sent = db.Column(db.Boolean, default=False)
-    
     visits = db.relationship('Visit', backref='patient', lazy=True)
 
 class Visit(db.Model):
@@ -45,8 +42,6 @@ class Visit(db.Model):
     next_plan = db.Column(db.Text)
     
     status = db.Column(db.String(20), default='Pending')
-    
-    # Prevents duplicate reminder messages
     reminder_sent = db.Column(db.Boolean, default=False)
 
 with app.app_context():
@@ -59,14 +54,22 @@ with app.app_context():
 @app.route('/', methods=['GET', 'POST'])
 def registration_page():
     found_patient = None
+    patient_history = []
+
+    # SEARCH LOGIC
     if request.method == 'POST' and 'btn_search' in request.form:
         search_phone = request.form.get('search_phone')
+        # Find Patient
         found_patient = Patient.query.filter_by(phone=search_phone).first()
-    return render_template('registration.html', patient=found_patient)
+        
+        # If found, get their previous history (visits) sorted by latest
+        if found_patient:
+            patient_history = Visit.query.filter_by(patient_id=found_patient.id).order_by(Visit.id.desc()).all()
+
+    return render_template('registration.html', patient=found_patient, history=patient_history)
 
 @app.route('/add', methods=['POST'])
 def add_patient():
-    # 1. Collect Data
     phone = request.form['phone']
     name = request.form['name']
     age = request.form.get('age')
@@ -85,24 +88,23 @@ def add_patient():
     today_str = date.today().strftime('%Y-%m-%d')
     is_new_patient = False
 
-    # 2. Check & Update Patient
     existing_patient = Patient.query.filter_by(phone=phone).first()
 
     if existing_patient:
+        # Update Old Patient Info
         existing_patient.name = name 
         existing_patient.age = age
         existing_patient.address = address
         existing_patient.family_history = fam_hist
         patient_id = existing_patient.id
     else:
-        # New Patient (welcome_sent defaults to False)
+        # New Patient
         new_patient = Patient(name=name, phone=phone, age=age, gender=gender, address=address, family_history=fam_hist)
         db.session.add(new_patient)
         db.session.commit()
         patient_id = new_patient.id
         is_new_patient = True
 
-    # 3. Add Visit
     new_visit = Visit(
         patient_id=patient_id,
         visit_date=today_str,
@@ -120,9 +122,7 @@ def add_patient():
     db.session.add(new_visit)
     db.session.commit()
     
-    # Only show Welcome Button if it's a new patient AND welcome msg hasn't been sent yet
     show_welcome = is_new_patient
-    
     return redirect(url_for('appointments_page', new_id=patient_id if show_welcome else None))
 
 # ==========================================
@@ -135,10 +135,8 @@ def appointments_page():
     new_patient_id = request.args.get('new_id')
     new_patient = None
     
-    # Fetch new patient only if needed
     if new_patient_id:
         new_patient = Patient.query.get(new_patient_id)
-        # If welcome already sent, don't show the button again
         if new_patient and new_patient.welcome_sent:
             new_patient = None
 
@@ -167,17 +165,13 @@ def appointments_page():
 
     return render_template('appointments.html', visits=visits, s_date=search_date, s_treatment=search_treatment, new_patient=new_patient)
 
-# --- SEND WELCOME MSG (UPDATED: SEND ONCE ONLY) ---
 @app.route('/send_welcome/<int:id>')
 def send_welcome(id):
     patient = Patient.query.get_or_404(id)
 
-    # 1. CHECK: Has it already been sent?
     if patient.welcome_sent:
-        print(f"Skipping welcome for {patient.name}, already sent.")
         return redirect('/appointments')
 
-    # 2. PREPARE DATA
     phone = str(patient.phone).strip()
     if len(phone) == 10: phone = "+91" + phone
     elif not phone.startswith('+'): phone = "+" + phone
@@ -188,15 +182,11 @@ def send_welcome(id):
            f"👉 https://instagram.com/nilkantha_skin_clinic")
     
     try:
-        # 3. SEND MESSAGE
         pywhatkit.sendwhatmsg_instantly(phone, msg, 15, True, 4)
-        
-        # 4. MARK AS SENT IN DATABASE
         patient.welcome_sent = True
         db.session.commit()
-        
     except Exception as e:
-        print(f"Error sending welcome: {e}")
+        print(f"Error: {e}")
         
     return redirect('/appointments')
 
@@ -243,11 +233,13 @@ def send_reminders():
             if len(phone) == 10: phone = "+91" + phone
             elif not phone.startswith('+'): phone = "+" + phone
 
+            # UPDATE GOOGLE LINK HERE
             msg = (f"Hello {patient.name}, reminder for your {visit.procedure} appointment tomorrow ({tomorrow_str}). 🗓️\n\n"
                    f"How was the result and how was our treatment experience? ✨\n"
                    f"Please give a rating on Google and write your review about our treatment at Nilkanth Skin and Laser Center, Botad. 🏥⭐⭐⭐⭐⭐\n\n"
                    f"👇 Review Link:\n"
-                   f"https://share.google/plQFYmnMW1Nc94Qrq")            
+                   f"https://g.page/r/PASTE_YOUR_GOOGLE_MAP_LINK_HERE") 
+            
             logs.append(f"⏳ Sending to {patient.name}...")
             try:
                 pywhatkit.sendwhatmsg_instantly(phone, msg, 20, True, 4)

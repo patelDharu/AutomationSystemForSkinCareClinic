@@ -3,38 +3,103 @@
 <div class="row">
     
     <div class="col-12 mb-4">
-        <div class="modern-card p-3 bg-white border-left-primary">
+        <div class="modern-card p-4 bg-white border-start border-5 border-primary shadow-sm">
+            <h5 class="fw-bold text-primary mb-3"><i class="bi bi-search"></i> Find Old Patient</h5>
             <form action="/" method="POST" class="row align-items-center">
                 <div class="col-md-8">
-                    <label class="small fw-bold text-primary mb-1">OLD PATIENT? SEARCH HERE:</label>
-                    <input type="text" name="search_phone" class="form-control" placeholder="Enter Phone Number to autofill details..." required>
+                    <input type="text" name="search_phone" class="form-control form-control-lg" placeholder="Enter Phone Number..." required>
                 </div>
-                <div class="col-md-4 pt-4">
-                    <button type="submit" name="btn_search" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-search"></i> Search Patient
+                <div class="col-md-4">
+                    <button type="submit" name="btn_search" class="btn btn-primary-custom w-100 btn-lg">
+                        Search
                     </button>
                 </div>
             </form>
-            {% if patient %}
-                <div class="alert alert-success mt-2 mb-0 py-2 small">
-                    <i class="bi bi-check-circle"></i> Patient Found! Details loaded below. Update if needed.
-                </div>
-            {% endif %}
         </div>
     </div>
+
+    {% if patient %}
+    <div class="col-12 mb-4">
+        <div class="modern-card border-success border-start border-5">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="text-success fw-bold"><i class="bi bi-person-check-fill"></i> Old Patient Found</h4>
+                    <span class="badge bg-success fs-6">Registered</span>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="small text-muted">Name</label>
+                        <h5 class="fw-bold">{{ patient.name }}</h5>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-muted">Phone</label>
+                        <h5 class="fw-bold">{{ patient.phone }}</h5>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small text-muted">Age</label>
+                        <h5 class="fw-bold">{{ patient.age }}</h5>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small text-muted">Address</label>
+                        <p class="mb-0 fw-bold">{{ patient.address }}</p>
+                    </div>
+                </div>
+
+                <div class="accordion mt-4" id="historyAccordion">
+                    <div class="accordion-item border-0 shadow-sm">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed bg-light text-dark fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHistory">
+                                <i class="bi bi-clock-history me-2"></i> View Previous Visit History (Dropdown)
+                            </button>
+                        </h2>
+                        <div id="collapseHistory" class="accordion-collapse collapse" data-bs-parent="#historyAccordion">
+                            <div class="accordion-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-striped mb-0 small">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Diagnosis</th>
+                                                <th>Treatment</th>
+                                                <th>Medicines</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for visit in history %}
+                                            <tr>
+                                                <td>{{ visit.visit_date }}</td>
+                                                <td class="fw-bold text-danger">{{ visit.diagnosis }}</td>
+                                                <td>{{ visit.procedure }}</td>
+                                                <td>{{ visit.medicine_box }}</td>
+                                            </tr>
+                                            {% else %}
+                                            <tr><td colspan="4" class="text-center p-3">No previous history found.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="col-12">
         <div class="modern-card">
             <div class="card-header-custom">
-                <i class="bi bi-person-lines-fill text-primary"></i>
+                <i class="bi bi-clipboard2-pulse-fill text-primary"></i>
                 <h4 class="m-0">
-                    {% if patient %} Update Patient & Add Visit {% else %} New Registration & Checkup {% endif %}
+                    {% if patient %} Add New Visit Details {% else %} New Patient Registration {% endif %}
                 </h4>
             </div>
             <div class="card-body p-4">
                 <form action="/add" method="POST">
                     
-                    <h6 class="text-uppercase text-primary fw-bold mb-3 border-bottom pb-2">Patient Details</h6>
+                    <h6 class="text-uppercase text-primary fw-bold mb-3 border-bottom pb-2">Basic Details</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-3">
                             <label class="small text-muted">Full Name *</label>
@@ -58,11 +123,11 @@
                         </div>
                     </div>
 
-                    <h6 class="text-uppercase text-primary fw-bold mb-3 border-bottom pb-2">Current Visit Data</h6>
+                    <h6 class="text-uppercase text-primary fw-bold mb-3 border-bottom pb-2">Current Treatment Data</h6>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="small text-muted fw-bold">Complaint (C/O)</label>
-                            <input type="text" name="complaint" class="form-control">
+                            <input type="text" name="complaint" class="form-control" placeholder="Current problem...">
                         </div>
                         
                         <div class="col-md-6">
@@ -97,7 +162,7 @@
                     
                     <div class="text-end mt-4">
                         <button type="submit" class="btn btn-primary-custom px-5 py-2">
-                            {% if patient %} Update & Save Visit {% else %} Save New Record {% endif %}
+                            <i class="bi bi-save-fill me-2"></i> Save Visit
                         </button>
                     </div>
                 </form>
