@@ -3,11 +3,11 @@
 <div class="modern-card">
     <div class="card-header-custom">
         <i class="bi bi-whatsapp text-success"></i>
-        <h4 class="m-0">WhatsApp Automation</h4>
+        <h4 class="m-0">Page 3: WhatsApp Automation</h4>
     </div>
     <div class="card-body p-5 text-center">
         <h3 class="mb-3">Send Reminders for Tomorrow</h3>
-        <p class="text-muted mb-4">This will scan the database for appointments scheduled for tomorrow and send a WhatsApp message to each patient automatically.</p>
+        <p class="text-muted mb-4">Scans for tomorrow's appointments and sends a reminder with the Google Review link.</p>
         
         <a href="/send_reminders" class="btn btn-success btn-lg px-5 rounded-pill shadow" onclick="return confirm('Ensure WhatsApp Web is open. Start now?')">
             <i class="bi bi-send-fill me-2"></i> Start Sending Messages
@@ -15,7 +15,7 @@
     </div>
 
     {% if logs %}
-    <div class="card-footer bg-dark p-3">
+    <div class="card-footer bg-dark p-3 text-start">
         <h6 class="text-white border-bottom border-secondary pb-2">Processing Logs:</h6>
         <div style="font-family: monospace; color: #00ff9d; max-height: 200px; overflow-y: auto;">
             {% for log in logs %} 

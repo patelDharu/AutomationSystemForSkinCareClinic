@@ -3,41 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClinicPro System</title>
+    <title>Nilkanth SkinCare | Modern Clinic System</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
     <style>
-        :root { --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%); --bg-color: #f4f7f6; }
-        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); color: #444; }
-        .navbar { background: var(--primary-gradient); box-shadow: 0 4px 15px rgba(118,75,162,0.3); }
-        .nav-link { color: rgba(255,255,255,0.8) !important; font-weight: 500; margin: 0 10px; }
-        .nav-link.active { color: #fff !important; font-weight: 700; border-bottom: 2px solid #fff; }
-        .modern-card { background: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border: none; overflow: hidden; margin-bottom: 30px; }
-        .card-header-custom { background: #fff; padding: 20px 25px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; }
-        .btn-primary-custom { background: var(--primary-gradient); border: none; color: white; }
+        /* --- BASE STYLES --- */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(180deg, #ffffff 0%, #fcf5fa 100%);
+            min-height: 100vh;
+            color: #444;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* --- THEME COLORS --- */
+        :root {
+            --primary-color: #712164; /* Your Purple */
+            --primary-light: #944085; /* Lighter Purple for Gradients */
+            --white: #FFFFFF;
+        }
+
+        /* --- BUBBLES ANIMATION (Now Purple) --- */
+        .bubbles-container {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background: transparent;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle at 30% 30%, var(--primary-light), var(--primary-color));
+            border: 1px solid rgba(113, 33, 100, 0.4);
+            box-shadow: 0 4px 10px rgba(113, 33, 100, 0.2);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: rise 10s infinite ease-in;
+        }
+
+        .bubble:nth-child(1) { width: 60px; height: 60px; left: 10%; animation-duration: 8s; opacity: 0.5; }
+        .bubble:nth-child(2) { width: 30px; height: 30px; left: 20%; animation-duration: 5s; animation-delay: 1s; opacity: 0.7; }
+        .bubble:nth-child(3) { width: 70px; height: 70px; left: 35%; animation-duration: 10s; animation-delay: 2s; opacity: 0.4; }
+        .bubble:nth-child(4) { width: 90px; height: 90px; left: 50%; animation-duration: 11s; animation-delay: 0s; opacity: 0.3; }
+        .bubble:nth-child(5) { width: 45px; height: 45px; left: 55%; animation-duration: 6s; animation-delay: 1s; opacity: 0.6; }
+        .bubble:nth-child(6) { width: 55px; height: 55px; left: 65%; animation-duration: 8s; animation-delay: 3s; opacity: 0.5; }
+        .bubble:nth-child(7) { width: 100px; height: 100px; left: 75%; animation-duration: 12s; animation-delay: 2s; opacity: 0.2; }
+        .bubble:nth-child(8) { width: 35px; height: 35px; left: 85%; animation-duration: 6s; animation-delay: 2s; opacity: 0.7; }
+        .bubble:nth-child(9) { width: 20px; height: 20px; left: 70%; animation-duration: 5s; animation-delay: 1s; opacity: 0.6; }
+        .bubble:nth-child(10) { width: 60px; height: 60px; left: 90%; animation-duration: 9s; animation-delay: 4s; opacity: 0.4; }
+
+        @keyframes rise {
+            0% { bottom: -100px; transform: translateX(0); }
+            50% { transform: translateX(50px); }
+            100% { bottom: 1080px; transform: translateX(-50px); }
+        }
+
+        /* --- GLASS CARDS & UI --- */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(113, 33, 100, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(113, 33, 100, 0.05);
+            padding: 15px 0;
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        .nav-link { 
+            color: #555 !important; 
+            font-weight: 500; margin: 0 10px; border-radius: 50px; padding: 8px 20px !important; transition:0.3s;
+        }
+        .nav-link:hover, .nav-link.active { 
+            background: var(--primary-color);
+            color: white !important; 
+            box-shadow: 0 4px 15px rgba(113, 33, 100, 0.3); 
+        }
+        
+        .btn-primary-custom {
+            background: var(--primary-color);
+            border: none; color: white; border-radius: 50px; padding: 12px 30px; font-weight: 600;
+            box-shadow: 0 4px 15px rgba(113, 33, 100, 0.3); transition: 0.3s;
+        }
+        .btn-primary-custom:hover { 
+            background: #5a1a50;
+            transform: translateY(-2px); 
+        }
+
+        .form-control, .form-select { 
+            border-radius: 12px; padding: 12px; 
+            border: 1px solid #e1e1e1; 
+            background: rgba(255,255,255,0.9); 
+        }
+        .form-control:focus, .form-select:focus { 
+            box-shadow: 0 0 0 4px rgba(113, 33, 100, 0.1);
+            border-color: var(--primary-color); 
+        }
+        
+        .card-header-custom { 
+            background: rgba(255,255,255,0.6); 
+            padding: 20px 30px; 
+            border-bottom: 1px solid rgba(113, 33, 100, 0.05); 
+            display: flex; align-items: center; gap: 15px; 
+        }
+
+        .text-primary { color: var(--primary-color) !important; }
+        .border-primary { border-color: var(--primary-color) !important; }
+        .bg-primary { background-color: var(--primary-color) !important; }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+
+    <div class="bubbles-container">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-custom mb-5">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/"><i class="bi bi-hospital-fill me-2"></i> NilkanthSkinCare</a>
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+                <img src="{{ url_for('static', filename='images/nillogoClinic.png') }}" alt="Nilkanth SkinCare Logo" class="me-2 shadow-sm rounded-circle" style="height: 50px; width: auto;">
+                
+                <span style="color: var(--primary-color);">NilkanthSkinCare</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="/">1. New Registration</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/appointments">2. Appointment List</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/automation">3. WhatsApp Automation</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/">Register</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/appointments">Appointments</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/automation">Automation</a></li>
                 </ul>
             </div>
         </div>
     </nav>
+
     <div class="container">
         {% block content %}{% endblock %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>

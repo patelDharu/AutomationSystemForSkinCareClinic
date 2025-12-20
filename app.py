@@ -23,7 +23,10 @@ class Patient(db.Model):
     gender = db.Column(db.String(10))
     address = db.Column(db.Text)
     family_history = db.Column(db.Text)
+    
+    # Flag to ensure Welcome Msg is sent only once
     welcome_sent = db.Column(db.Boolean, default=False)
+    
     visits = db.relationship('Visit', backref='patient', lazy=True)
 
 class Visit(db.Model):
@@ -55,32 +58,52 @@ with app.app_context():
 def registration_page():
     found_patient = None
     patient_history = []
+    candidates = [] # List for multiple patients with same name
 
-    # SEARCH LOGIC
-    if request.method == 'POST' and 'btn_search' in request.form:
-        search_phone = request.form.get('search_phone')
-        # Find Patient
-        found_patient = Patient.query.filter_by(phone=search_phone).first()
-        
-        # If found, get their previous history (visits) sorted by latest
+    # 1. HANDLE SELECTION FROM LIST (When user clicks "Select")
+    selected_id = request.args.get('select_id')
+    if selected_id:
+        found_patient = Patient.query.get(selected_id)
         if found_patient:
+            # Load history (Newest first)
             patient_history = Visit.query.filter_by(patient_id=found_patient.id).order_by(Visit.id.desc()).all()
 
-    return render_template('registration.html', patient=found_patient, history=patient_history)
+    # 2. HANDLE SEARCH BUTTON CLICK
+    if request.method == 'POST' and 'btn_search' in request.form:
+        search_name = request.form.get('search_name').strip()
+        
+        if search_name:
+            # Search by Name (Case insensitive partial match)
+            results = Patient.query.filter(Patient.name.ilike(f"%{search_name}%")).all()
+            
+            if len(results) == 1:
+                # Only 1 found? Load directly
+                found_patient = results[0]
+                patient_history = Visit.query.filter_by(patient_id=found_patient.id).order_by(Visit.id.desc()).all()
+            elif len(results) > 1:
+                # Multiple found? Show list
+                candidates = results
+            else:
+                pass # None found
+
+    return render_template('registration.html', patient=found_patient, history=patient_history, candidates=candidates)
 
 @app.route('/add', methods=['POST'])
 def add_patient():
+    # --- 1. COLLECT DATA ---
     phone = request.form['phone']
     name = request.form['name']
     age = request.form.get('age')
     gender = request.form.get('gender')
     address = request.form.get('address')
     fam_hist = request.form.get('family_history')
+
+    # Current Visit Data
     complaint = request.form.get('complaint')
     diagnosis = request.form.get('diagnosis')
     procedure = request.form.get('procedure')
     investigation = request.form.get('investigation')
-    medicines = request.form.get('medicine_box')
+    medicines = request.form.get('medicine_box') # This is the NEW medicine
     advice = request.form.get('advice')
     next_plan = request.form.get('next_plan')
     next_appt_date = request.form.get('next_appt_date') 
@@ -88,23 +111,25 @@ def add_patient():
     today_str = date.today().strftime('%Y-%m-%d')
     is_new_patient = False
 
+    # --- 2. CHECK IF PATIENT EXISTS (By Phone) ---
     existing_patient = Patient.query.filter_by(phone=phone).first()
 
     if existing_patient:
-        # Update Old Patient Info
+        # Update Old Patient Details
         existing_patient.name = name 
         existing_patient.age = age
         existing_patient.address = address
         existing_patient.family_history = fam_hist
         patient_id = existing_patient.id
     else:
-        # New Patient
+        # Create New Patient
         new_patient = Patient(name=name, phone=phone, age=age, gender=gender, address=address, family_history=fam_hist)
         db.session.add(new_patient)
         db.session.commit()
         patient_id = new_patient.id
         is_new_patient = True
 
+    # --- 3. CREATE NEW VISIT RECORD ---
     new_visit = Visit(
         patient_id=patient_id,
         visit_date=today_str,
@@ -122,6 +147,7 @@ def add_patient():
     db.session.add(new_visit)
     db.session.commit()
     
+    # Show welcome button ONLY if it's a truly new patient
     show_welcome = is_new_patient
     return redirect(url_for('appointments_page', new_id=patient_id if show_welcome else None))
 
@@ -132,9 +158,10 @@ def add_patient():
 @app.route('/appointments', methods=['GET', 'POST'])
 def appointments_page():
     visits = []
+    
+    # Handle New Patient Alert
     new_patient_id = request.args.get('new_id')
     new_patient = None
-    
     if new_patient_id:
         new_patient = Patient.query.get(new_patient_id)
         if new_patient and new_patient.welcome_sent:
@@ -145,9 +172,39 @@ def appointments_page():
     query = Visit.query
 
     if request.method == 'POST':
+        # --- LOGIC CHANGE FOR 'SHOW ALL' (Combine Medicines) ---
         if 'show_all' in request.form:
-            visits = query.order_by(Visit.next_appt_date).all()
+            # 1. Saare Patients le aao
+            all_patients = Patient.query.all()
+            
+            for p in all_patients:
+                # 2. Har patient ki saari visits nikalo (Newest First)
+                p_visits = Visit.query.filter_by(patient_id=p.id).order_by(Visit.id.desc()).all()
+                
+                if p_visits:
+                    # Sabse latest visit (Jo main row banegi)
+                    latest_visit = p_visits[0]
+                    
+                    # 3. Saari purani aur nayi medicines ko jodna (Combine Logic)
+                    combined_meds = []
+                    for v in p_visits:
+                        if v.medicine_box and v.medicine_box.strip():
+                            # Format: [Date] Medicine Name
+                            entry = f"📅 {v.visit_date}:\n{v.medicine_box}"
+                            combined_meds.append(entry)
+                    
+                    # 4. Latest visit ke medicine box mein poora history daal do (Sirf display ke liye)
+                    # "---" se separate karenge taaki saaf dikhe
+                    latest_visit.medicine_box = "\n\n--------------------\n".join(combined_meds)
+                    
+                    # List mein add karo
+                    visits.append(latest_visit)
+            
+            # (Optional) Sort visits by date if needed
+            visits.sort(key=lambda x: x.visit_date, reverse=True)
+
         elif 'search_btn' in request.form:
+            # Normal Search Filters (Ye waisa hi rahega)
             if search_date:
                 query = query.filter_by(next_appt_date=search_date)
             else:
@@ -159,12 +216,14 @@ def appointments_page():
                 query = query.filter(Visit.procedure.contains(search_treatment))
             visits = query.all()
     else:
+        # Default View: Today's Appointments
         today = date.today().strftime('%Y-%m-%d')
         visits = query.filter_by(next_appt_date=today).all()
         search_date = today
 
     return render_template('appointments.html', visits=visits, s_date=search_date, s_treatment=search_treatment, new_patient=new_patient)
 
+# --- WELCOME MESSAGE LOGIC (Sends Once) ---
 @app.route('/send_welcome/<int:id>')
 def send_welcome(id):
     patient = Patient.query.get_or_404(id)
@@ -233,7 +292,7 @@ def send_reminders():
             if len(phone) == 10: phone = "+91" + phone
             elif not phone.startswith('+'): phone = "+" + phone
 
-            # UPDATE GOOGLE LINK HERE
+            # --- REMINDER MESSAGE ---
             msg = (f"Hello {patient.name}, reminder for your {visit.procedure} appointment tomorrow ({tomorrow_str}). 🗓️\n\n"
                    f"How was the result and how was our treatment experience? ✨\n"
                    f"Please give a rating on Google and write your review about our treatment at Nilkanth Skin and Laser Center, Botad. 🏥⭐⭐⭐⭐⭐\n\n"
