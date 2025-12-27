@@ -3,9 +3,21 @@
 
 {% if new_patient %}
 <div class="alert alert-success d-flex align-items-center justify-content-between shadow rounded-4 p-3 mb-4 animate__animated animate__bounceIn" role="alert">
-    <div><i class="bi bi-check-circle-fill fs-4 me-2"></i> New Patient <strong>{{ new_patient.name }}</strong> registered successfully!</div>
+    <div><i class="bi bi-person-plus-fill fs-4 me-2"></i> New Patient <strong>{{ new_patient.name }}</strong> registered!</div>
     <a href="/send_welcome/{{ new_patient.id }}" class="btn btn-success rounded-pill px-4 shadow-sm">
         <i class="bi bi-whatsapp me-2"></i> Send Welcome Msg
+    </a>
+</div>
+{% endif %}
+
+{% if updated_visit %}
+<div class="alert alert-info d-flex align-items-center justify-content-between shadow rounded-4 p-3 mb-4 animate__animated animate__fadeInDown" role="alert" style="background-color: #e3f2fd; border-color: #90caf9; color: #0d47a1;">
+    <div>
+        <i class="bi bi-pencil-square fs-4 me-2"></i> 
+        Visit Updated for <strong>{{ updated_visit.patient.name }}</strong> (Treatment: {{ updated_visit.procedure }})
+    </div>
+    <a href="/send_visit_update/{{ updated_visit.id }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+        <i class="bi bi-whatsapp me-2"></i> Send Visit Summary
     </a>
 </div>
 {% endif %}
@@ -18,16 +30,10 @@
     
     <div class="p-4 bg-light border-bottom">
         <form method="POST" action="/appointments" class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label class="small fw-bold text-muted mb-1">DATE</label>
-                <input type="date" name="search_date" value="{{ s_date }}" class="form-control">
-            </div>
-            <div class="col-md-4">
-                <label class="small fw-bold text-muted mb-1">SEARCH</label>
-                <input type="text" name="search_treatment" value="{{ s_treatment }}" class="form-control" placeholder="Search treatment...">
-            </div>
+            <div class="col-md-3"><label class="small fw-bold text-muted mb-1">DATE</label><input type="date" name="search_date" value="{{ s_date }}" class="form-control"></div>
+            <div class="col-md-4"><label class="small fw-bold text-muted mb-1">SEARCH</label><input type="text" name="search_treatment" value="{{ s_treatment }}" class="form-control" placeholder="Search treatment..."></div>
             <div class="col-md-5">
-                <button type="submit" name="search_btn" class="btn btn-primary-custom me-2"><i class="bi bi-funnel-fill"></i> Filter</button>
+                <button type="submit" name="search_btn" class="btn btn-primary-custom me-2">Filter</button>
                 <button type="submit" name="show_all" class="btn btn-light border shadow-sm rounded-pill px-3">Show All History</button>
             </div>
         </form>
@@ -35,25 +41,28 @@
 
     <div class="table-responsive">
         <table class="table table-hover mb-0 align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th class="ps-4">Next Date</th><th>Patient</th><th>Diagnosis</th><th>Treatment</th><th>Medicines</th><th>Action</th>
-                </tr>
-            </thead>
+            <thead class="table-light"><tr><th class="ps-4">Next Date</th><th>Patient</th><th>Diagnosis</th><th>Treatment</th><th>Medicines</th><th>Action</th></tr></thead>
             <tbody>
                 {% for visit in visits %}
                 <tr class="animate__animated animate__fadeIn">
                     <td class="ps-4 fw-bold text-primary">{{ visit.next_appt_date }}</td>
-                    <td>
-                        <div class="fw-bold text-dark">{{ visit.patient.name }}</div>
-                        <div class="small text-muted">{{ visit.patient.phone }}</div>
-                    </td>
+                    <td><div class="fw-bold text-dark">{{ visit.patient.name }}</div><div class="small text-muted">{{ visit.patient.phone }}</div></td>
                     <td><span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">{{ visit.diagnosis }}</span></td>
-                 <td><span class="badge rounded-pill px-3 py-2 shadow-sm" style="background-color: #712164; color: white;">{{ visit.procedure }}</span></td>
-                    <td class="small text-muted" style="max-width:250px; white-space:pre-wrap;">{{ visit.medicine_box }}</td>
+                    
                     <td>
-                        <a href="/delete/{{ visit.id }}" class="btn btn-sm btn-outline-danger rounded-circle p-2" onclick="return confirm('Delete?')"><i class="bi bi-trash"></i></a>
+                        {% if 'Hair' in visit.procedure or 'hair' in visit.procedure %}
+                            <span class="badge rounded-pill px-3 py-2 shadow-sm" style="background-color: #712164; color: white;">{{ visit.procedure }}</span>
+                        {% elif 'Acne' in visit.procedure or 'acne' in visit.procedure %}
+                            <span class="badge rounded-pill px-3 py-2 shadow-sm bg-danger text-white">{{ visit.procedure }}</span>
+                        {% elif 'Peel' in visit.procedure %}
+                            <span class="badge rounded-pill px-3 py-2 shadow-sm bg-warning text-dark">{{ visit.procedure }}</span>
+                        {% else %}
+                            <span class="badge rounded-pill px-3 py-2 shadow-sm bg-primary text-white">{{ visit.procedure }}</span>
+                        {% endif %}
                     </td>
+
+                    <td class="small text-muted" style="max-width:250px; white-space:pre-wrap;">{{ visit.medicine_box }}</td>
+                    <td><a href="/delete/{{ visit.id }}" class="btn btn-sm btn-outline-danger rounded-circle p-2" onclick="return confirm('Delete?')"><i class="bi bi-trash"></i></a></td>
                 </tr>
                 {% else %}
                 <tr><td colspan="6" class="text-center py-5 text-muted">No appointments found.</td></tr>

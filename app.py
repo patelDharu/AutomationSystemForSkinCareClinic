@@ -147,9 +147,13 @@ def add_patient():
     db.session.add(new_visit)
     db.session.commit()
     
-    # Show welcome button ONLY if it's a truly new patient
-    show_welcome = is_new_patient
-    return redirect(url_for('appointments_page', new_id=patient_id if show_welcome else None))
+    # --- 4. REDIRECT LOGIC (UPDATED) ---
+    if is_new_patient:
+        # Redirect with new_id to show Welcome Message Button
+        return redirect(url_for('appointments_page', new_id=patient_id))
+    else:
+        # Redirect with visit_update_id to show Visit Update Message Button
+        return redirect(url_for('appointments_page', visit_update_id=new_visit.id))
 
 # ==========================================
 #  PAGE 2: APPOINTMENT LIST
@@ -159,13 +163,19 @@ def add_patient():
 def appointments_page():
     visits = []
     
-    # Handle New Patient Alert
+    # Handle New Patient Alert (Welcome Msg)
     new_patient_id = request.args.get('new_id')
     new_patient = None
     if new_patient_id:
         new_patient = Patient.query.get(new_patient_id)
         if new_patient and new_patient.welcome_sent:
             new_patient = None
+
+    # Handle Old Patient Update Alert (Visit Update Msg)
+    visit_update_id = request.args.get('visit_update_id')
+    updated_visit = None
+    if visit_update_id:
+        updated_visit = Visit.query.get(visit_update_id)
 
     search_date = request.form.get('search_date')
     search_treatment = request.form.get('search_treatment')
@@ -221,7 +231,7 @@ def appointments_page():
         visits = query.filter_by(next_appt_date=today).all()
         search_date = today
 
-    return render_template('appointments.html', visits=visits, s_date=search_date, s_treatment=search_treatment, new_patient=new_patient)
+    return render_template('appointments.html', visits=visits, s_date=search_date, s_treatment=search_treatment, new_patient=new_patient, updated_visit=updated_visit)
 
 # --- WELCOME MESSAGE LOGIC (Sends Once) ---
 @app.route('/send_welcome/<int:id>')
@@ -246,6 +256,32 @@ def send_welcome(id):
         db.session.commit()
     except Exception as e:
         print(f"Error: {e}")
+        
+    return redirect('/appointments')
+
+# --- NEW: SEND VISIT UPDATE MESSAGE (For Old Patients) ---
+@app.route('/send_visit_update/<int:visit_id>')
+def send_visit_update(visit_id):
+    visit = Visit.query.get_or_404(visit_id)
+    patient = visit.patient
+    
+    phone = str(patient.phone).strip()
+    if len(phone) == 10: phone = "+91" + phone
+    elif not phone.startswith('+'): phone = "+" + phone
+
+    # Message Content for Old Patient
+    next_date_txt = visit.next_appt_date if visit.next_appt_date else "Not Scheduled"
+    
+    msg = (f"👋 Hello {patient.name},\n\n"
+           f"Thank you for visiting NilkanthSkinCare today. ✅\n"
+           f"Treatment: {visit.procedure}\n"
+           f"Next Appointment: {next_date_txt} 🗓️\n\n"
+           f"Take care! For any query, reply here.")
+
+    try:
+        pywhatkit.sendwhatmsg_instantly(phone, msg, 15, True, 4)
+    except Exception as e:
+        print(f"Error sending msg: {e}")
         
     return redirect('/appointments')
 

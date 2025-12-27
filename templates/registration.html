@@ -1,10 +1,9 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="row">
-    
     <div class="col-12 mb-4 animate__animated animate__fadeInDown">
         <div class="glass-card p-5 text-center">
-            <h2 class="fw-bold mb-3" style="color: #4a5568;">Welcome to Reception</h2>
+            <h2 class="fw-bold mb-3" style="color: var(--primary-color);">Welcome to Reception</h2>
             <p class="text-muted mb-4">Search for an existing patient or start a new registration.</p>
             
             <form action="/" method="POST" class="row justify-content-center">
@@ -69,13 +68,18 @@
                             <small class="text-muted">Contact</small>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="p-3 bg-light rounded-4 h-100 d-flex align-items-center">
-                            <i class="bi bi-geo-alt-fill fs-3 text-secondary me-3 ms-2"></i>
-                            <div>
-                                <h6 class="fw-bold mb-0">{{ patient.address }}</h6>
-                                <small class="text-muted">Address</small>
-                            </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded-4 text-center h-100">
+                            <i class="bi bi-geo-alt-fill fs-4 text-secondary d-block mb-2"></i>
+                            <h6 class="fw-bold mb-0">{{ patient.address }}</h6>
+                            <small class="text-muted">Address</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded-4 text-center h-100">
+                            <i class="bi bi-people-fill fs-4 text-secondary d-block mb-2"></i>
+                            <h6 class="fw-bold mb-0 text-danger">{{ patient.family_history if patient.family_history else 'None' }}</h6>
+                            <small class="text-muted">Family History</small>
                         </div>
                     </div>
                 </div>
@@ -83,26 +87,42 @@
                 <div class="accordion mt-4" id="historyAccordion">
                     <div class="accordion-item border-0 shadow-sm rounded-4 overflow-hidden">
                         <h2 class="accordion-header" id="headingOne">
-                            <button class="accordion-button collapsed bg-white fw-bold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHistory">
-                                <i class="bi bi-clock-history text-primary me-2"></i> View Past History
+                            <button class="accordion-button bg-white fw-bold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHistory">
+                                <i class="bi bi-clock-history text-primary me-2"></i> View Full Previous History (Click to Open)
                             </button>
                         </h2>
-                        <div id="collapseHistory" class="accordion-collapse collapse" data-bs-parent="#historyAccordion">
+                        <div id="collapseHistory" class="accordion-collapse collapse show" data-bs-parent="#historyAccordion">
                             <div class="accordion-body p-0">
-                                <table class="table table-striped mb-0 small">
-                                    <thead class="table-dark"><tr><th>Date</th><th>Diagnosis</th><th>Meds</th></tr></thead>
-                                    <tbody>
-                                        {% for visit in history %}
-                                        <tr>
-                                            <td>{{ visit.visit_date }}</td>
-                                            <td class="text-danger fw-bold">{{ visit.diagnosis }}</td>
-                                            <td style="white-space: pre-wrap;">{{ visit.medicine_box }}</td>
-                                        </tr>
-                                        {% else %}
-                                        <tr><td colspan="3" class="text-center p-3">No history.</td></tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped mb-0 small">
+                                        <thead class="table-dark text-center">
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Complaint</th>
+                                                <th>Diagnosis</th>
+                                                <th>Treatment</th>
+                                                <th>Medicines</th>
+                                                <th>Advice</th>
+                                                <th>Next Visit</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for visit in history %}
+                                            <tr>
+                                                <td class="fw-bold text-nowrap">{{ visit.visit_date }}</td>
+                                                <td>{{ visit.complaint }}</td>
+                                                <td class="text-danger fw-bold">{{ visit.diagnosis }}</td>
+                                                <td><span class="badge bg-primary rounded-pill">{{ visit.procedure }}</span></td>
+                                                <td style="white-space: pre-wrap; font-family: monospace; color: #006400; min-width: 200px;">{{ visit.medicine_box }}</td>
+                                                <td style="white-space: pre-wrap;">{{ visit.advice }}</td>
+                                                <td class="fw-bold text-primary">{{ visit.next_appt_date }}</td>
+                                            </tr>
+                                            {% else %}
+                                            <tr><td colspan="7" class="text-center p-3 text-muted">No previous history found.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -117,7 +137,7 @@
             <div class="card-header-custom">
                 <i class="bi bi-clipboard2-pulse-fill fs-4 text-primary floating-icon"></i>
                 <h4 class="m-0 fw-bold" style="color:#555">
-                    {% if patient %} Update Visit Details {% else %} New Registration {% endif %}
+                    {% if patient %} Update Visit Details (Today) {% else %} New Registration {% endif %}
                 </h4>
             </div>
             <div class="card-body p-5">
@@ -179,12 +199,12 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label text-muted small">Next Plan</label>
+                            <label class="form-label text-muted small">Next Plan (Optional)</label>
                             <input type="text" name="next_plan" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold text-primary">Next Appointment Date</label>
-                            <input type="date" name="next_appt_date" class="form-control border-primary" required>
+                            <label class="form-label fw-bold text-primary">Next Appointment Date (Optional)</label>
+                            <input type="date" name="next_appt_date" class="form-control border-primary">
                         </div>
                     </div>
 
